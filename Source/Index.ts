@@ -2,7 +2,7 @@ import express from "express";
 const fs = require("fs");
 const App : any = express();
 import { exec } from "child_process";
-const Crypto = require("crypto");
+import * as Crypto from "crypto";
 
 // Set the path to your webpage file and PDF file
 const webpagePath = './Index.html';
@@ -35,7 +35,6 @@ App.get('/', (req, res) => {
     // Insert the PDF data URI and modification time into the HTML content
     webpageHtml = webpageHtml.replace('[[PDF_DATA_URI]]', pdfDataUri);
     webpageHtml = webpageHtml.replace('[[PDF_HASH]]', GetPdfHashString());
-    webpageHtml = webpageHtml.replace('[[PDF_MTIME]]', pdfMtime.getTime().toString());
     // Send the modified HTML content as the response
     res.send(webpageHtml);
 });
@@ -79,6 +78,6 @@ App.get
 );
 
 // Start the server and listen for incoming requests
-app.listen(3000, () => {
+App.listen(3000, () => {
     console.log('Server running on port 3000');
 });
