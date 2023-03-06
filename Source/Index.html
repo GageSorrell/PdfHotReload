@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Embedded PDF Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        let Hash = "[[PDF_HASH]]";
+        function CheckForUpdatePdf() {
+            fetch('http://localhost:3000/get-hash')
+            .then(response => response.text())
+            .then
+            (
+                (NewHash) => {
+                    if (Hash !== NewHash) {
+                        location.reload();
+                    }
+                }
+            );
+        }
+        // function checkPdfModified()
+        // {
+        //     var xhr = new XMLHttpRequest();
+        //     xhr.open('HEAD', '/pdf-modified', true);
+        //     xhr.onreadystatechange = () =>
+        //     {
+        //         if (xhr.readyState === 4 && xhr.status === 200)
+        //         {
+        //             var currentMtime = new Date(xhr.getResponseHeader('Last-Modified'));
+        //             var storedMtime = new Date(document.getElementById('pdf-mtime').value);
+        //             if (currentMtime > storedMtime)
+        //             {
+        //                 document.getElementById('pdf-object').data = '/pdf';
+        //                 document.getElementById('pdf-mtime').value = currentMtime.getTime().toString();
+        //             }
+        //         }
+        //     }
+        //     xhr.send();
+        // }
+
+        // Load and render the PDF file using pdf.js
+        function loadPdf() {
+            var pdfDataUri = '[[PDF_DATA_URI]]';
+            // var pdfMtime = new Date(parseInt('[[PDF_MTIME]]'));
+            // // Check if the PDF file has been modified since the last load
+            // if (sessionStorage.getItem('pdfMtime') !== pdfMtime.toUTCString()) {
+            var loadingTask = pdfjsLib.getDocument({ data: atob(pdfDataUri.split(',')[1]) });
+            loadingTask.promise.then(function (pdf) {
+                var scale = 1.5;
+                var canvas = document.getElementById('pdf-canvas');
+                var ctx = canvas.getContext('2d');
+                // Render the first page of the PDF file
+                pdf.getPage(1).then(function (page) {
+                    var viewport = page.getViewport({ scale: scale });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    var renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    // page.render(renderContext).promise.then(function () {
+                    //     sessionStorage.setItem('pdfMtime', pdfMtime.toUTCString());
+                    // });
+                });
+            });
+            // }
+        }
+        //   setInterval(loadPdf, 5000);
+        // loadPdf();
+
+        // function CheckForHash
+    </script>
+</head>
+
+<body onload="loadPdf()">
+    <canvas id="pdf-canvas"></canvas>
+</body>
+
+</html>
