@@ -55,9 +55,24 @@ function CompileTexFile() : void
             // console.log(Error);
         }
 
-        spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
+        const Latexmk : ChildProcess = spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
+        Latexmk.stderr.on("data", (Chunk : any) : void =>
+        {
+            let ChunkString : string = Chunk.toString();
+            if(ChunkString.startsWith("Reverting"))
+            {
+                return;
+            }
+
+            let ErrorMessage : string = "✋ There was an error compiling your last edit:\n";
+            ChunkString.replace(/(\r\n|\r|\n)/g, `$1➡\n️`);
+            ErrorMessage += ChunkString;
+            ErrorMessage += "🛑 This ends the error message.";
+            console.warn(ErrorMessage);
+        });
     });
 }
+
 function WatchTexFile() : void
 {
     Fs.watch(TexFilePath, (EventType : Fs.WatchEventType, FileName : string) : void =>
@@ -69,15 +84,21 @@ function WatchTexFile() : void
     });
 }
 
-function GetPdfHashString() : string
+let PdfHashString : string = "";
+/** Update the hash iff the PDF is valid or if the app is starting up. */
+function UpdatePdfHashString() : string
 {
     const PdfHash : Crypto.Hash = Crypto.createHash("sha256");
     try
     {
         const PdfFile : any = Fs.readFileSync(PdfPath);
-        PdfHash.update(PdfFile);
-        const PdfHashString : string = PdfHash.digest("hex");
-        return PdfHashString;
+        const bPdfValid : boolean = Buffer.isBuffer(PdfFile) && PdfFile.lastIndexOf("%PDF-") === 0 && PdfFile.lastIndexOf("%%EOF") > -1;
+        if(bPdfValid || PdfHashString === "")
+        {
+            PdfHash.update(PdfFile);
+            PdfHashString = PdfHash.digest("hex");
+            return PdfHashString;
+        }
     }
     catch(Error)
     {
@@ -109,13 +130,14 @@ async function Main() : Promise<void>
         "/get-hash",
         (Request : Request, Response : Response) =>
         {
-            Response.send(GetPdfHashString());
+            UpdatePdfHashString();
+            Response.send(PdfHashString);
         }
     );
 
     App.listen(1985, () =>
     {
-        console.log("Server running on port 1985");
+        console.log("👍 pdf-hot-reload is running.");
     });
 }
 
