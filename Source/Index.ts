@@ -6,6 +6,9 @@ const App : Express = express();
 import { ChildProcess, spawn } from "child_process";
 import * as Crypto from "crypto";
 import * as Path from "path";
+import open from "open";
+
+import { FEnvironmentValidator, FEnvironmentDescription } from "./ValidateEnvironment";
 
 App.use(express.static(__dirname + "/static"));
 
@@ -13,54 +16,45 @@ const WebPagePath = __dirname + "\\Index.html";
 const TexFilePath : string = Path.resolve(process.argv[2]);
 const PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
 
-async function ValidateEnvironment() : Promise<boolean>
+function CompileTexFile() : Promise<boolean>
 {
-    return new Promise((Resolve, Reject) =>
+    return new Promise<boolean>((Resolve, Reject) : void =>
     {
-        /* This assumes that we are on exactly linux, MacOS, or Windows. */
-        const WhereWhichCommand : string = process.platform === "linux" || process.platform === "darwin"
-            ? "which"
-            : "where";
-
-        const WhereWhichProcess : ChildProcess = spawn(WhereWhichCommand, [ "latexmk" ]);
-        WhereWhichProcess.stderr.on("data", (Chunk : any) : void =>
+        Fs.unlink(PdfPath, (Error) =>
         {
-            console.error("🚨 latexmk is not installed!  pdfhotreload is exiting...\n");
-            Resolve(false);
-        });
-
-        WhereWhichProcess.on("close", (Code : number, Signal : NodeJS.Signals) : void =>
-        {
-            Resolve(true);
-        });
-    });
-}
-
-function CompileTexFile() : void
-{
-    const TexDirectory : string = Path.dirname(TexFilePath);
-    // const Process : ChildProcess = spawn("latexmk", [ "-pdf", "-f", `-output-directory="${PdfPath}"`, TexFilePath ]);
-    Fs.unlink(PdfPath, (Error) =>
-    {
-        if(Error)
-        {
-            // console.log(Error);
-        }
-
-        const Latexmk : ChildProcess = spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
-        Latexmk.stderr.on("data", (Chunk : any) : void =>
-        {
-            let ChunkString : string = Chunk.toString();
-            if(ChunkString.startsWith("Reverting"))
+            if(Error)
             {
-                return;
+                // console.log(Error);
             }
 
-            let ErrorMessage : string = "✋ There was an error compiling your last edit:\n";
-            ChunkString.replace(/(\r\n|\r|\n)/g, `$1➡\n️`);
-            ErrorMessage += ChunkString;
-            ErrorMessage += "🛑 This ends the error message.";
-            console.warn(ErrorMessage);
+            const Latexmk : ChildProcess = spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
+            Latexmk.stderr.on("data", (Chunk : any) : void =>
+            {
+                let ChunkString : string = Chunk.toString();
+                if(ChunkString.startsWith("Reverting"))
+                {
+                    return;
+                }
+
+                let ErrorMessage : string = "✋ There was an error compiling your last edit:\n";
+                ChunkString.replace(/(\r\n|\r|\n)/g, `$1➡\n️`);
+                ErrorMessage += ChunkString;
+                ErrorMessage += "🛑 This ends the error message.";
+                console.warn(ErrorMessage);
+                Resolve(false);
+            });
+
+            Latexmk.addListener("close", (Code : number, Signal : NodeJS.Signals) : void =>
+            {
+                if(Code === 0)
+                {
+                    Resolve(true);
+                }
+                else
+                {
+                    Resolve(false);
+                }
+            });
         });
     });
 }
@@ -100,22 +94,22 @@ function UpdatePdfHashString() : string
 
 async function Main() : Promise<void>
 {
-    await ValidateEnvironment();
-    CompileTexFile();
-    WatchTexFile();
-
-    App.get("/", (Request : Request, Response : Response) =>
-    {
-        if(Request.query.file !== Path.basename(PdfPath))
+    App.get
+    (
+        "/",
+        (Request : Request, Response : Response) =>
         {
-            Response.redirect(`/?file=${Path.basename(PdfPath)}`);
+            if(Request.query.file !== Path.basename(PdfPath))
+            {
+                Response.redirect(`/?file=${Path.basename(PdfPath)}`);
+            }
+            else
+            {
+                const WebPageHtml : string = Fs.readFileSync(WebPagePath, "utf8");
+                Response.send(WebPageHtml);
+            }
         }
-        else
-        {
-            const WebPageHtml : string = Fs.readFileSync(WebPagePath, "utf8");
-            Response.send(WebPageHtml);
-        }
-    });
+    );
 
     App.get
     (
@@ -131,6 +125,22 @@ async function Main() : Promise<void>
     {
         console.log("👍 pdf-hot-reload is running.");
     });
+
+    const EnvironmentValidator = new FEnvironmentValidator();
+    await EnvironmentValidator.Validate();
+    CompileTexFile().then(() : void =>
+    {
+        if(EnvironmentValidator.EnvironmentDescription.bHasTermux)
+        {
+            spawn("termux-open", [ "http://localhost:1985/" ])
+        }
+        else
+        {
+            open("http://localhost:1985/");
+        }
+    });
+
+    WatchTexFile();
 }
 
 Main();
