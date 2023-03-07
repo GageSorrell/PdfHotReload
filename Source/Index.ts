@@ -10,7 +10,7 @@ import open from "open";
 
 import { FEnvironmentValidator, FEnvironmentDescription } from "./ValidateEnvironment";
 
-App.use(express.static(Path.resolve(__dirname, "/static")));
+App.use(express.static(Path.resolve(__dirname, "static")));
 
 const WebPagePath = Path.resolve(__dirname, "Index.html");
 const TexFilePath : string = Path.resolve(process.argv[2]);
