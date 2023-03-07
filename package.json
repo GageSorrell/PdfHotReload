@@ -1,5 +1,5 @@
 {
-  "name": "pdf-hot-reload",
+  "name": "@sorrell/pdf-hot-reload",
   "version": "1.0.0",
   "description": "",
   "main": "Build/index.js",
@@ -10,13 +10,15 @@
   "bin": {
     "pdf-hot-reload": "Build/Index.js"
   },
-  "repository": {
+  "repository":
+  {
     "type": "git",
     "url": "git+https://github.com/GageSorrell/PdfHotReload.git"
   },
   "author": "Gage Sorrell",
   "license": "MIT",
-  "bugs": {
+  "bugs":
+  {
     "url": "https://github.com/GageSorrell/PdfHotReload/issues"
   },
   "homepage": "https://github.com/GageSorrell/PdfHotReload#readme",

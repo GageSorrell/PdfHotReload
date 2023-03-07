@@ -10,7 +10,7 @@ export class FEnvironmentValidator
 {
     constructor()
     {
-        this.WhereWhichCommand = process.platform === "linux" || process.platform === "darwin"
+        this.WhereWhichCommand = process.platform === "linux" || process.platform === "darwin" || process.platform === "android"
             ? "which"
             : "where";
     }
