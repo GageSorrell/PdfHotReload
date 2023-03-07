@@ -4,20 +4,24 @@ const App : any = express();
 import { exec } from "child_process";
 import * as Crypto from "crypto";
 
+App.use(express.static(__dirname + "/static"));
+
 // Set the path to your webpage file and PDF file
 const webpagePath = './Index.html';
-const pdfPath = './Exam1.pdf';
+// const PdfPath = "static/Exam1.pdf";
+const PdfFileName = "Exam1.pdf";
+function GetPdfPath() : string { return __dirname + "/static/" + PdfFileName; }
 const plaintextPath = './Exam1.tex';
 
 // Initialize the last modified time of the plaintext file
-let lastPlaintextModified = fs.statSync(plaintextPath).mtimeMs;
+// let lastPlaintextModified = fs.statSync(plaintextPath).mtimeMs;
 
-function GetPdfHashString()
+function GetPdfHashString() : string
 {
-    const PdfHash = Crypto.createHash("sha256");
-    const PdfFile = fs.readFileSync(pdfPath);
+    const PdfHash : Crypto.Hash = Crypto.createHash("sha256");
+    const PdfFile : any = fs.readFileSync(GetPdfPath());
     PdfHash.update(PdfFile);
-    const PdfHashString = PdfHash.digest("hex");
+    const PdfHashString : string = PdfHash.digest("hex");
 
     return PdfHashString;
 }
@@ -25,11 +29,12 @@ function GetPdfHashString()
 // Set up a route to serve the webpage
 App.get('/', (req, res) => {
     // Read the contents of the PDF file into a buffer
-    const pdfBuffer = fs.readFileSync(pdfPath);
+    const pdfBuffer = fs.readFileSync(GetPdfPath());
     // Get the modification time of the PDF file
-    const pdfMtime = fs.statSync(pdfPath).mtime;
+    // const pdfMtime = fs.statSync(pdfPath).mtime;
     // Convert the buffer to a base64-encoded data URI
     const pdfDataUri = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+    // console.log(pdfDataUri);
     // Read the contents of the webpage HTML file into a string
     let webpageHtml = fs.readFileSync(webpagePath, 'utf8');
     // Insert the PDF data URI and modification time into the HTML content
@@ -40,32 +45,38 @@ App.get('/', (req, res) => {
 });
 
 // Check if the plaintext file has been modified, and if so, generate the PDF
-function checkPlaintextModified() {
-    fs.stat(plaintextPath, (err, stats) => {
-        if (err) {
-            console.error(err);
-        } else {
-            if (stats.mtimeMs > lastPlaintextModified) {
-                lastPlaintextModified = stats.mtimeMs;
-                console.log('Plaintext file has been modified, regenerating PDF...');
-                exec(`latexmk -pdf Exam1.tex`, (err, stdout, stderr) => {
-                    if (err) {
-                        console.error(err);
-                    } else {
-                        console.log(stdout);
-                    }
-                });
-            }
-        }
-    });
-}
+// function checkPlaintextModified() : void
+// {
+//     fs.stat(plaintextPath, (err, stats) =>
+//     {
+//         if (err) {
+//             console.error(err);
+//         } else {
+//             if (stats.mtimeMs > lastPlaintextModified) {
+//                 lastPlaintextModified = stats.mtimeMs;
+//                 console.log('Plaintext file has been modified, regenerating PDF...');
+//                 exec(`latexmk -pdf Exam1.tex`, (err, stdout, stderr) => {
+//                     if (err) {
+//                         console.error(err);
+//                     } else {
+//                         console.log(stdout);
+//                     }
+//                 });
+//             }
+//         }
+//     });
+// }
 
 // Set up a timer to check if the plaintext file has been modified every second
-setInterval(checkPlaintextModified, 1000);
+// setInterval(checkPlaintextModified, 1000);
 
 // Set up a route to serve the PDF file
-App.get('/pdf', (req, res) => {
-    res.sendFile(pdfPath);
+App.get('/pdf', (Request, Response) => {
+    // Response.sendFile(__dirname + "/" + pdfPath);
+    
+    const PdfFile : any = fs.readFileSync(GetPdfPath());
+    Response.contentType("application/pdf");
+    Response.send(PdfFile);
 });
 
 App.get
@@ -81,3 +92,24 @@ App.get
 App.listen(3000, () => {
     console.log('Server running on port 3000');
 });
+
+// Set up a route to serve the PDF file
+App.get('/pdf', (Request, Response) => {
+    // Response.sendFile(__dirname + "/" + pdfPath);
+    
+    const PdfFile : any = fs.readFileSync(GetPdfPath());
+    Response.contentType("application/pdf");
+    Response.send(PdfFile);
+});
+
+function CheckForTexChanges() : void
+{
+    const TexHash : Crypto.Hash = Crypto.createHash("sha256");
+    const TexFile : any = fs.readFileSync();
+    PdfHash.update(PdfFile);
+    const PdfHashString : string = PdfHash.digest("hex");
+
+    return PdfHashString;
+}
+
+setInterval(CheckForTexChanges, 1000);
