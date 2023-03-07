@@ -11,15 +11,7 @@ App.use(express.static(__dirname + "/static"));
 
 const WebPagePath = __dirname + "\\Index.html";
 const TexFilePath : string = Path.resolve(process.argv[2]);
-let PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
-
-// spawn("Get-Command", [ "latexmk" ]).addListener("exit", (Code : number, Signal : NodeJS.Signals) : void =>
-// {
-//     if(Code !== 0)
-//     {
-
-//     }
-// });
+const PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
 
 async function ValidateEnvironment() : Promise<boolean>
 {
