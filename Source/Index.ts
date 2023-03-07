@@ -25,7 +25,7 @@ async function ValidateEnvironment() : Promise<boolean>
         const WhereWhichProcess : ChildProcess = spawn(WhereWhichCommand, [ "latexmk" ]);
         WhereWhichProcess.stderr.on("data", (Chunk : any) : void =>
         {
-            console.error("latexmk is not installed!  pdfhotreload is exiting...\n");
+            console.error("🚨 latexmk is not installed!  pdfhotreload is exiting...\n");
             Resolve(false);
         });
 
