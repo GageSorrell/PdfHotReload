@@ -10,11 +10,11 @@ import open from "open";
 
 import { FEnvironmentValidator, FEnvironmentDescription } from "./ValidateEnvironment";
 
-App.use(express.static(__dirname + "/static"));
+App.use(express.static(Path.resolve(__dirname, "/static")));
 
-const WebPagePath = __dirname + "\\Index.html";
+const WebPagePath = Path.resolve(__dirname, "Index.html");
 const TexFilePath : string = Path.resolve(process.argv[2]);
-const PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
+const PdfPath : string = Path.resolve(__dirname, "static", Path.basename(TexFilePath, ".tex") + ".pdf");
 
 function CompileTexFile() : Promise<boolean>
 {
@@ -27,7 +27,7 @@ function CompileTexFile() : Promise<boolean>
                 // console.log(Error);
             }
 
-            const Latexmk : ChildProcess = spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
+            const Latexmk : ChildProcess = spawn("latexmk", [ "-pdf", `-output-directory=${Path.resolve(__dirname, "static")}`, TexFilePath ]);
             Latexmk.stderr.on("data", (Chunk : any) : void =>
             {
                 let ChunkString : string = Chunk.toString();
