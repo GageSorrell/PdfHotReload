@@ -1,37 +1,61 @@
-import express from "express";
+import express, { Express, Request, Response } from "express";
 import * as Fs from "fs";
-const App : any = express();
+const App : Express = express();
 import { ChildProcess, spawn } from "child_process";
 import * as Crypto from "crypto";
 import * as Path from "path";
 
 App.use(express.static(__dirname + "/static"));
 
-// Set the path to your webpage file and PDF file
-const webpagePath = './Index.html';
-// const PdfPath = "static/Exam1.pdf";
-const PdfFileName = "Exam1.pdf";
-function GetPdfPath() : string { return __dirname + "/static/" + PdfFileName; }
-const plaintextPath = './Exam1.tex';
-
-console.log("Path was " + process.argv[2]);
+const WebPagePath = "./Index.html";
 const TexFilePath : string = Path.resolve(process.argv[2]);
+let PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
 
-/* @Todo Check to make sure that latexmk is installed. */
+// spawn("Get-Command", [ "latexmk" ]).addListener("exit", (Code : number, Signal : NodeJS.Signals) : void =>
+// {
+//     if(Code !== 0)
+//     {
+
+//     }
+// });
+
+async function ValidateEnvironment() : Promise<boolean>
+{
+    return new Promise((Resolve, Reject) =>
+    {
+        /* This assumes that we are on exactly linux, MacOS, or Windows. */
+        const WhereWhichCommand : string = process.platform === "linux" || process.platform === "darwin"
+            ? "which"
+            : "where";
+
+        const WhereWhichProcess : ChildProcess = spawn(WhereWhichCommand, [ "latexmk" ]);
+        WhereWhichProcess.stderr.on("data", (Chunk : any) : void =>
+        {
+            console.error("latexmk is not installed!  pdfhotreload is exiting...\n");
+            Resolve(false);
+        });
+
+        WhereWhichProcess.on("close", (Code : number, Signal : NodeJS.Signals) : void =>
+        {
+            Resolve(true);
+        });
+    });
+}
 
 function CompileTexFile() : void
 {
     const TexDirectory : string = Path.dirname(TexFilePath);
-    const Process : ChildProcess = spawn("latexmk", [ "-pdf", TexFilePath ]);
-    Process.addListener("close", (Code : number, Signal : NodeJS.Signals) : void =>
+    // const Process : ChildProcess = spawn("latexmk", [ "-pdf", "-f", `-output-directory="${PdfPath}"`, TexFilePath ]);
+    Fs.unlink(PdfPath, (Error) =>
     {
+        if(Error)
+        {
+            console.log(Error);
+        }
 
-        console.log("NodeJS Signal is " + Signal + ", Code is " + Code);
+        spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
     });
-    // process.chdir(TexFileDirectory);
-
 }
-
 function WatchTexFile() : void
 {
     Fs.watch(TexFilePath, (EventType : Fs.WatchEventType, FileName : string) : void =>
@@ -42,104 +66,54 @@ function WatchTexFile() : void
         }
     });
 }
-
-// Initialize the last modified time of the plaintext file
-// let lastPlaintextModified = fs.statSync(plaintextPath).mtimeMs;
-
 function GetPdfHashString() : string
 {
     const PdfHash : Crypto.Hash = Crypto.createHash("sha256");
-    const PdfFile : any = Fs.readFileSync(GetPdfPath());
-    PdfHash.update(PdfFile);
-    const PdfHashString : string = PdfHash.digest("hex");
-
-    return PdfHashString;
+    try
+    {
+        const PdfFile : any = Fs.readFileSync(PdfPath);
+        PdfHash.update(PdfFile);
+        const PdfHashString : string = PdfHash.digest("hex");
+        return PdfHashString;
+    }
+    catch(Error)
+    {
+        // console.log(Error);
+    }
 }
 
-// Set up a route to serve the webpage
-App.get('/', (req, res) => {
-    // Read the contents of the PDF file into a buffer
-    const pdfBuffer = Fs.readFileSync(GetPdfPath());
-    // Get the modification time of the PDF file
-    // const pdfMtime = fs.statSync(pdfPath).mtime;
-    // Convert the buffer to a base64-encoded data URI
-    const pdfDataUri = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
-    // console.log(pdfDataUri);
-    // Read the contents of the webpage HTML file into a string
-    let webpageHtml = Fs.readFileSync(webpagePath, 'utf8');
-    // Insert the PDF data URI and modification time into the HTML content
-    webpageHtml = webpageHtml.replace('[[PDF_DATA_URI]]', pdfDataUri);
-    webpageHtml = webpageHtml.replace('[[PDF_HASH]]', GetPdfHashString());
-    // Send the modified HTML content as the response
-    res.send(webpageHtml);
-});
+async function Main() : Promise<void>
+{
+    await ValidateEnvironment();
+    CompileTexFile();
+    WatchTexFile();
 
-// Check if the plaintext file has been modified, and if so, generate the PDF
-// function checkPlaintextModified() : void
-// {
-//     fs.stat(plaintextPath, (err, stats) =>
-//     {
-//         if (err) {
-//             console.error(err);
-//         } else {
-//             if (stats.mtimeMs > lastPlaintextModified) {
-//                 lastPlaintextModified = stats.mtimeMs;
-//                 console.log('Plaintext file has been modified, regenerating PDF...');
-//                 exec(`latexmk -pdf Exam1.tex`, (err, stdout, stderr) => {
-//                     if (err) {
-//                         console.error(err);
-//                     } else {
-//                         console.log(stdout);
-//                     }
-//                 });
-//             }
-//         }
-//     });
-// }
-
-// Set up a timer to check if the plaintext file has been modified every second
-// setInterval(checkPlaintextModified, 1000);
-
-// Set up a route to serve the PDF file
-App.get('/pdf', (Request, Response) => {
-    // Response.sendFile(__dirname + "/" + pdfPath);
-    
-    const PdfFile : any = Fs.readFileSync(GetPdfPath());
-    Response.contentType("application/pdf");
-    Response.send(PdfFile);
-});
-
-App.get
-(
-    "/get-hash",
-    (Request, Response) =>
+    App.get("/", (Request : Request, Response : Response) =>
     {
-        Response.send(GetPdfHashString());
-    }
-);
+        if(Request.query.file !== Path.basename(PdfPath))
+        {
+            Response.redirect(`/?file=${Path.basename(PdfPath)}`);
+        }
+        else
+        {
+            const WebPageHtml : string = Fs.readFileSync(WebPagePath, "utf8");
+            Response.send(WebPageHtml);
+        }
+    });
 
-// Start the server and listen for incoming requests
-App.listen(1985, () => {
-    console.log('Server running on port 1985');
-});
+    App.get
+    (
+        "/get-hash",
+        (Request : Request, Response : Response) =>
+        {
+            Response.send(GetPdfHashString());
+        }
+    );
 
-// Set up a route to serve the PDF file
-App.get('/pdf', (Request, Response) => {
-    // Response.sendFile(__dirname + "/" + pdfPath);
-    
-    const PdfFile : any = Fs.readFileSync(GetPdfPath());
-    Response.contentType("application/pdf");
-    Response.send(PdfFile);
-});
+    App.listen(1985, () =>
+    {
+        console.log("Server running on port 1985");
+    });
+}
 
-// function CheckForTexChanges() : void
-// {
-//     const TexHash : Crypto.Hash = Crypto.createHash("sha256");
-//     const TexFile : any = Fs.readFileSync();
-//     PdfHash.update(PdfFile);
-//     const PdfHashString : string = PdfHash.digest("hex");
-
-//     return PdfHashString;
-// }
-
-// setInterval(CheckForTexChanges, 1000);
+Main();
