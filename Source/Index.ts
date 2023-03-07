@@ -1,8 +1,9 @@
 import express from "express";
-const fs = require("fs");
+import * as Fs from "fs";
 const App : any = express();
-import { exec } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import * as Crypto from "crypto";
+import * as Path from "path";
 
 App.use(express.static(__dirname + "/static"));
 
@@ -13,13 +14,41 @@ const PdfFileName = "Exam1.pdf";
 function GetPdfPath() : string { return __dirname + "/static/" + PdfFileName; }
 const plaintextPath = './Exam1.tex';
 
+const TexFilePath : string = Path.resolve(process.argv[2]);
+
+/* @Todo Check to make sure that latexmk is installed. */
+
+function CompileTexFile() : void
+{
+    const TexDirectory : string = Path.dirname(TexFilePath);
+    const Process : ChildProcess = spawn("latexmk", [ "-pdf", TexFilePath ]);
+    Process.addListener("close", (Code : number, Signal : NodeJS.Signals) : void =>
+    {
+
+        console.log("NodeJS Signal is " + Signal + ", Code is " + Code);
+    });
+    // process.chdir(TexFileDirectory);
+
+}
+
+function WatchTexFile() : void
+{
+    Fs.watch(TexFilePath, (EventType : Fs.WatchEventType, FileName : string) : void =>
+    {
+        if(EventType === "change")
+        {
+            CompileTexFile();
+        }
+    });
+}
+
 // Initialize the last modified time of the plaintext file
 // let lastPlaintextModified = fs.statSync(plaintextPath).mtimeMs;
 
 function GetPdfHashString() : string
 {
     const PdfHash : Crypto.Hash = Crypto.createHash("sha256");
-    const PdfFile : any = fs.readFileSync(GetPdfPath());
+    const PdfFile : any = Fs.readFileSync(GetPdfPath());
     PdfHash.update(PdfFile);
     const PdfHashString : string = PdfHash.digest("hex");
 
@@ -29,14 +58,14 @@ function GetPdfHashString() : string
 // Set up a route to serve the webpage
 App.get('/', (req, res) => {
     // Read the contents of the PDF file into a buffer
-    const pdfBuffer = fs.readFileSync(GetPdfPath());
+    const pdfBuffer = Fs.readFileSync(GetPdfPath());
     // Get the modification time of the PDF file
     // const pdfMtime = fs.statSync(pdfPath).mtime;
     // Convert the buffer to a base64-encoded data URI
     const pdfDataUri = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
     // console.log(pdfDataUri);
     // Read the contents of the webpage HTML file into a string
-    let webpageHtml = fs.readFileSync(webpagePath, 'utf8');
+    let webpageHtml = Fs.readFileSync(webpagePath, 'utf8');
     // Insert the PDF data URI and modification time into the HTML content
     webpageHtml = webpageHtml.replace('[[PDF_DATA_URI]]', pdfDataUri);
     webpageHtml = webpageHtml.replace('[[PDF_HASH]]', GetPdfHashString());
@@ -74,7 +103,7 @@ App.get('/', (req, res) => {
 App.get('/pdf', (Request, Response) => {
     // Response.sendFile(__dirname + "/" + pdfPath);
     
-    const PdfFile : any = fs.readFileSync(GetPdfPath());
+    const PdfFile : any = Fs.readFileSync(GetPdfPath());
     Response.contentType("application/pdf");
     Response.send(PdfFile);
 });
@@ -97,19 +126,19 @@ App.listen(3000, () => {
 App.get('/pdf', (Request, Response) => {
     // Response.sendFile(__dirname + "/" + pdfPath);
     
-    const PdfFile : any = fs.readFileSync(GetPdfPath());
+    const PdfFile : any = Fs.readFileSync(GetPdfPath());
     Response.contentType("application/pdf");
     Response.send(PdfFile);
 });
 
-function CheckForTexChanges() : void
-{
-    const TexHash : Crypto.Hash = Crypto.createHash("sha256");
-    const TexFile : any = fs.readFileSync();
-    PdfHash.update(PdfFile);
-    const PdfHashString : string = PdfHash.digest("hex");
+// function CheckForTexChanges() : void
+// {
+//     const TexHash : Crypto.Hash = Crypto.createHash("sha256");
+//     const TexFile : any = Fs.readFileSync();
+//     PdfHash.update(PdfFile);
+//     const PdfHashString : string = PdfHash.digest("hex");
 
-    return PdfHashString;
-}
+//     return PdfHashString;
+// }
 
-setInterval(CheckForTexChanges, 1000);
+// setInterval(CheckForTexChanges, 1000);
