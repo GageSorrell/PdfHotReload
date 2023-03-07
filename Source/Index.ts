@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import express, { Express, Request, Response } from "express";
 import * as Fs from "fs";
 const App : Express = express();
@@ -66,6 +68,7 @@ function WatchTexFile() : void
         }
     });
 }
+
 function GetPdfHashString() : string
 {
     const PdfHash : Crypto.Hash = Crypto.createHash("sha256");

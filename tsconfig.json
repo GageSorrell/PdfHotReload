@@ -6,7 +6,8 @@
         "module": "commonjs",
         "esModuleInterop": true,
         "sourceMap": true,
-        "outDir": "./Build"
+        "outDir": "./Build",
+        "declaration": true
     },
     "include":
     [

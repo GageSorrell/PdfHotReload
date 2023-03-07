@@ -2,10 +2,14 @@
   "name": "pdf-hot-reload",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "Build/index.js",
   "scripts": {
-    "run": "node indexecho \"Error: no test specified\" && exit 1",
+    "run": "node Build/index.js",
     "build": "tsc"
+  },
+  "bin":
+  {
+    "pdf-hot-reload": "Build/Index.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +24,7 @@
   "dependencies": {
     "express": "^4.18.2"
   },
+  "types": "Build/Index.d.ts",
   "devDependencies": {
     "@types/express": "^4.17.17",
     "@types/node": "^18.14.6",
