@@ -14,6 +14,7 @@ const PdfFileName = "Exam1.pdf";
 function GetPdfPath() : string { return __dirname + "/static/" + PdfFileName; }
 const plaintextPath = './Exam1.tex';
 
+console.log("Path was " + process.argv[2]);
 const TexFilePath : string = Path.resolve(process.argv[2]);
 
 /* @Todo Check to make sure that latexmk is installed. */
@@ -118,8 +119,8 @@ App.get
 );
 
 // Start the server and listen for incoming requests
-App.listen(3000, () => {
-    console.log('Server running on port 3000');
+App.listen(1985, () => {
+    console.log('Server running on port 1985');
 });
 
 // Set up a route to serve the PDF file
