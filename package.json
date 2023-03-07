@@ -7,8 +7,7 @@
     "run": "node Build/index.js",
     "build": "tsc"
   },
-  "bin":
-  {
+  "bin": {
     "pdf-hot-reload": "Build/Index.js"
   },
   "repository": {
@@ -16,13 +15,14 @@
     "url": "git+https://github.com/GageSorrell/PdfHotReload.git"
   },
   "author": "Gage Sorrell",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/GageSorrell/PdfHotReload/issues"
   },
   "homepage": "https://github.com/GageSorrell/PdfHotReload#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "open": "^8.4.2"
   },
   "types": "Build/Index.d.ts",
   "devDependencies": {
