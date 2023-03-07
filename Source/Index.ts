@@ -9,7 +9,7 @@ import * as Path from "path";
 
 App.use(express.static(__dirname + "/static"));
 
-const WebPagePath = "./Index.html";
+const WebPagePath = __dirname + "\\Index.html";
 const TexFilePath : string = Path.resolve(process.argv[2]);
 let PdfPath : string = __dirname + "\\static\\" + Path.basename(TexFilePath, ".tex") + ".pdf";
 
@@ -52,7 +52,7 @@ function CompileTexFile() : void
     {
         if(Error)
         {
-            console.log(Error);
+            // console.log(Error);
         }
 
         spawn("latexmk", [ "-pdf", `-output-directory=${__dirname + "\\static"}`, TexFilePath ]);
