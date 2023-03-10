@@ -1,6 +1,8 @@
 # PDF Hot Reload
 
-![App Logo](https://github.com/GageSorrell/PdfHotReload/blob/master/Logo.png?raw=true)
+<p align="center">
+    <img width="256" height="256" src="https://github.com/GageSorrell/PdfHotReload/blob/master/Logo.png?raw=true">
+</p>
 
 PDF Hot Reload is an `npm` package that enables users to view their work in the browser with automatic reloading.
 
