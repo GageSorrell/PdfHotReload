@@ -13,7 +13,7 @@ For example, the LaTeX Workshop plugin is currently broken when run on `code-ser
 
 PDF Hot Reload is available on `npm`,
 ```bash
-npm i -g pdf-hot-reload
+npm i -g @sorrell/pdf-hot-reload
 ```
 
 # Configuration
